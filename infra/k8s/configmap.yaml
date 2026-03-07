@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-config
+  namespace: pe
+  labels:
+    app.kubernetes.io/name: pe
+data:
+  NODE_ENV: "production"
+  HAPI_FHIR_URL: "http://hapi:8080/fhir"
+  PROXY_SERVICE_URL: "http://proxy:3002"
+  VALIDATOR_SERVICE_URL: "http://validator:3010"
+  PA_SIMULATOR_SERVICE_URL: "http://pa-simulator:3003"
+  CORS_ORIGINS: "https://app.pe.health"
+  REDIS_URL: "redis://redis:6379"

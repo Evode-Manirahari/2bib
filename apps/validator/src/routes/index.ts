@@ -1,0 +1,1 @@
+export { validateRouter } from './validate';

@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pa-simulator
+  namespace: pe
+  labels:
+    app: pa-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pa-simulator
+  template:
+    metadata:
+      labels:
+        app: pa-simulator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+        prometheus.io/path: "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: pa-simulator
+          image: ghcr.io/your-org/pe/pa-simulator:latest
+          ports:
+            - containerPort: 3003
+              name: http
+          envFrom:
+            - configMapRef:
+                name: pe-config
+            - secretRef:
+                name: pe-secrets
+          env:
+            - name: PORT
+              value: "3003"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pa-simulator
+  namespace: pe
+  labels:
+    app: pa-simulator
+spec:
+  selector:
+    app: pa-simulator
+  ports:
+    - name: http
+      port: 3003
+      targetPort: 3003

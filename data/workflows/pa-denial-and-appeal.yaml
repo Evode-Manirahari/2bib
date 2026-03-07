@@ -1,0 +1,45 @@
+name: pa-denial-and-appeal
+description: >
+  Submit a PA that gets denied, then submit an appeal.
+  Asserts the appeal is approved.
+
+vars:
+  payerId: aetna-commercial
+  patientRef: Patient/sandbox-002
+  icd10: M54.5
+  cptCode: "27447"
+
+steps:
+  - name: submit-pa
+    action: pa-submit
+    input:
+      payerId: "{{ vars.payerId }}"
+      patientRef: "{{ vars.patientRef }}"
+      icd10: "{{ vars.icd10 }}"
+      cptCode: "{{ vars.cptCode }}"
+      scenario: appeal-approve
+    assert:
+      currentStatus: SUBMITTED
+
+  - name: wait-for-denial
+    action: pa-status
+    input:
+      id: "{{ steps.submit-pa.output.id }}"
+    assert:
+      currentStatus: DENIED
+
+  - name: submit-appeal
+    action: pa-appeal
+    input:
+      id: "{{ steps.submit-pa.output.id }}"
+      reason: Additional clinical documentation provided.
+      scenario: appeal-approve
+    assert:
+      currentStatus: APPEAL_SUBMITTED
+
+  - name: check-appeal-approved
+    action: pa-status
+    input:
+      id: "{{ steps.submit-pa.output.id }}"
+    assert:
+      currentStatus: APPEAL_APPROVED

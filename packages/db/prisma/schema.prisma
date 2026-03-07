@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  avatarUrl String?
+  githubId  String?   @unique
+  plan      Plan      @default(FREE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  stripeCustomerId   String?  @unique
+  stripeSubId        String?  @unique  /// active subscription ID
+  stripePriceId      String?           /// current price/plan ID
+
+  apiKeys  ApiKey[]
+  projects Project[]
+}
+
+// ── Projects ──────────────────────────────────────────────────────────────────
+
+model Project {
+  id          String @id @default(cuid())
+  name        String
+  userId      String
+  fhirVersion String @default("R4")
+  createdAt   DateTime @default(now())
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeys       ApiKey[]
+  requestLogs   RequestLog[]
+  validLogs     ValidationLog[]
+  paSimulations PASimulation[]
+  workflowRuns  WorkflowRun[]
+  usageRecords  UsageRecord[]
+}
+
+// ── API Keys ──────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  key       String    @unique /// bcrypt-hashed; use prefix for display
+  prefix    String    /// e.g. "pe_live_abc123" — shown to user
+  tier      Tier      @default(FREE)
+  rateLimit Int       @default(1000) /// calls per day
+  callCount Int       @default(0)
+  userId    String
+  projectId String
+  createdAt DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+}
+
+// ── Request Logs ──────────────────────────────────────────────────────────────
+
+model RequestLog {
+  id           String   @id @default(cuid())
+  projectId    String
+  method       String
+  path         String
+  statusCode   Int
+  durationMs   Int
+  requestBody  Json?
+  response     Json?
+  error        String?
+  payerTarget  String?
+  resourceType String?
+  createdAt    DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+// ── Validation Logs ───────────────────────────────────────────────────────────
+
+model ValidationLog {
+  id           String   @id @default(cuid())
+  projectId    String
+  resourceType String
+  profile      String?
+  isValid      Boolean
+  errorCount   Int
+  warningCount Int
+  errors       Json     /// EnrichedError[]
+  inputHash    String   /// SHA-256 of input resource — for cache dedup
+  durationMs   Int
+  createdAt    DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([inputHash])
+}
+
+// ── PA Simulations ────────────────────────────────────────────────────────────
+
+model PASimulation {
+  id           String   @id @default(cuid())
+  projectId    String
+  payerProfile String   /// e.g. "aetna-commercial"
+  scenario     String?  /// deterministic mode override
+  status       PAStatus
+  claim        Json     /// input FHIR Claim resource
+  response     Json?    /// FHIR ClaimResponse when resolved
+  timeline     Json     /// PATimelineEvent[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([projectId, status])
+}
+
+// ── Workflow Runs ─────────────────────────────────────────────────────────────
+
+model WorkflowRun {
+  id           String    @id @default(cuid())
+  projectId    String
+  workflowName String
+  status       RunStatus
+  steps        Json      /// StepResult[]
+  durationMs   Int?
+  createdAt    DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+// ── Usage Records ─────────────────────────────────────────────────────────────
+
+model UsageRecord {
+  id          String   @id @default(cuid())
+  projectId   String
+  periodStart DateTime
+  periodEnd   DateTime
+  callCount   Int      @default(0)
+  billedAt    DateTime?
+  stripeUsageRecordId String?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, periodStart])
+}
+
+// ── Sandbox Patients ──────────────────────────────────────────────────────────
+
+model SandboxPatient {
+  id         String   @id @default(cuid())
+  patientId  String   @unique /// FHIR Patient resource ID assigned by HAPI
+  name       String
+  gender     String
+  birthDate  String
+  payerId    String   /// payer-profile id, e.g. "aetna-commercial"
+  icd10      String   /// primary diagnosis ICD-10 code
+  sourceFile String?  /// originating bundle filename (null = seeded inline)
+  createdAt  DateTime @default(now())
+
+  @@index([payerId])
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Tier {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum PAStatus {
+  SUBMITTED
+  PENDING_REVIEW
+  PENDED_FOR_INFO
+  RE_REVIEW
+  APPROVED
+  DENIED
+  APPEAL_SUBMITTED
+  APPEAL_REVIEW
+  APPEAL_APPROVED
+  APPEAL_DENIED
+  PEER_TO_PEER_REQUESTED
+}
+
+enum RunStatus {
+  RUNNING
+  PASSED
+  FAILED
+  ERROR
+}

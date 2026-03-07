@@ -1,0 +1,39 @@
+{
+  "name": "pe",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "db:generate": "pnpm --filter @pe/db db:generate",
+    "db:migrate": "pnpm --filter @pe/db db:migrate",
+    "db:seed": "pnpm --filter @pe/db db:seed",
+    "data:generate": "tsx scripts/generate-data.ts",
+    "data:load": "tsx scripts/load-data.ts",
+    "sandbox:reset": "tsx scripts/seed-fhir.ts"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "axios": "^1.7.7",
+    "eslint": "^8.57.1",
+    "ora": "^5.4.1",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "esbuild", "prisma"]
+  }
+}

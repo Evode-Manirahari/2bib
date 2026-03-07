@@ -1,0 +1,43 @@
+name: pa-happy-path
+description: >
+  Validate a Patient resource, then submit a PA request that auto-approves.
+  Asserts the final status is APPROVED.
+
+vars:
+  payerId: uhc-commercial
+  patientRef: Patient/sandbox-001
+  icd10: C34.10
+  cptCode: "77067"
+
+steps:
+  - name: validate-patient
+    action: validate
+    input:
+      resource:
+        resourceType: Patient
+        id: sandbox-001
+        name:
+          - family: Doe
+            given: [Jane]
+        gender: female
+        birthDate: "1975-03-14"
+    assert:
+      isValid: true
+
+  - name: submit-pa
+    action: pa-submit
+    input:
+      payerId: "{{ vars.payerId }}"
+      patientRef: "{{ vars.patientRef }}"
+      icd10: "{{ vars.icd10 }}"
+      cptCode: "{{ vars.cptCode }}"
+      scenario: auto-approve
+    assert:
+      currentStatus: SUBMITTED
+
+  - name: check-approved
+    action: pa-status
+    input:
+      id: "{{ steps.submit-pa.output.id }}"
+    assert:
+      currentStatus: APPROVED

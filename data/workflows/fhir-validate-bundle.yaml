@@ -1,0 +1,73 @@
+name: fhir-validate-bundle
+description: >
+  Validate a FHIR transaction Bundle containing a Patient and Condition.
+  Both resources must pass structural validation.
+
+steps:
+  - name: validate-patient
+    action: validate
+    input:
+      resource:
+        resourceType: Patient
+        id: bundle-patient-001
+        name:
+          - family: Smith
+            given: [John]
+        gender: male
+        birthDate: "1990-06-15"
+    assert:
+      isValid: true
+      errorCount: 0
+
+  - name: validate-condition
+    action: validate
+    input:
+      resource:
+        resourceType: Condition
+        id: condition-001
+        clinicalStatus:
+          coding:
+            - system: http://terminology.hl7.org/CodeSystem/condition-clinical
+              code: active
+        code:
+          coding:
+            - system: http://snomed.info/sct
+              code: "44054006"
+              display: Diabetes mellitus type 2
+        subject:
+          reference: Patient/bundle-patient-001
+    assert:
+      isValid: true
+
+  - name: validate-bundle
+    action: validate
+    input:
+      resource:
+        resourceType: Bundle
+        type: transaction
+        entry:
+          - resource:
+              resourceType: Patient
+              id: bundle-patient-001
+              gender: male
+            request:
+              method: POST
+              url: Patient
+          - resource:
+              resourceType: Condition
+              id: condition-001
+              clinicalStatus:
+                coding:
+                  - system: http://terminology.hl7.org/CodeSystem/condition-clinical
+                    code: active
+              code:
+                coding:
+                  - system: http://snomed.info/sct
+                    code: "44054006"
+              subject:
+                reference: Patient/bundle-patient-001
+            request:
+              method: POST
+              url: Condition
+    assert:
+      isValid: true

@@ -1,0 +1,145 @@
+services:
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pe}
+      POSTGRES_USER: ${POSTGRES_USER:-pe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      sh -c "if [ -n '$$REDIS_PASSWORD' ]; then redis-server --requirepass $$REDIS_PASSWORD; else redis-server; fi"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hapi:
+    image: hapiproject/hapi:latest
+    restart: unless-stopped
+    environment:
+      hapi.fhir.fhir_version: R4
+      hapi.fhir.allow_multiple_delete: "true"
+      hapi.fhir.reuse_cached_search_results_millis: "3000"
+    volumes:
+      - hapi_data:/data/hapi
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/fhir/metadata || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  # ── Application Services ───────────────────────────────────────────────────
+
+  api:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO:?IMAGE_REPO required}/api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      HAPI_FHIR_URL: ${HAPI_FHIR_URL:-http://hapi:8080/fhir}
+      PROXY_SERVICE_URL: http://proxy:3002
+      VALIDATOR_SERVICE_URL: http://validator:3010
+      PA_SIMULATOR_SERVICE_URL: http://pa-simulator:3003
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      hapi:
+        condition: service_healthy
+
+  proxy:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO:?IMAGE_REPO required}/proxy:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${PROXY_PORT:-3002}:3002"
+    environment:
+      NODE_ENV: production
+      PORT: "3002"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      HAPI_FHIR_URL: ${HAPI_FHIR_URL:-http://hapi:8080/fhir}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      hapi:
+        condition: service_healthy
+
+  validator:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO:?IMAGE_REPO required}/validator:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${VALIDATOR_PORT:-3010}:3010"
+    environment:
+      NODE_ENV: production
+      PORT: "3010"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - validator_cache:/app/apps/validator/cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  pa-simulator:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO:?IMAGE_REPO required}/pa-simulator:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${PA_PORT:-3003}:3003"
+    environment:
+      NODE_ENV: production
+      PORT: "3003"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  dashboard:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO:?IMAGE_REPO required}/dashboard:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL required}
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  hapi_data:
+  validator_cache:
