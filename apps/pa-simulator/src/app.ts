@@ -1,12 +1,12 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { paRouter } from './routes';
 import { errorHandler } from './middleware';
 
-const app = express();
+const app: Express = express();
 
 app.use(helmet());
 app.use(cors());

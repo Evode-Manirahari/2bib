@@ -50,8 +50,8 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        sans: ['IBM Plex Sans', 'var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['IBM Plex Mono', 'var(--font-mono)', 'ui-monospace', 'monospace'],
       },
     },
   },

@@ -1,8 +1,18 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
+});
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -17,7 +27,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`min-h-screen bg-background font-sans antialiased ${inter.variable}`}>{children}</body>
+      <body className={`min-h-screen bg-background font-sans antialiased ${ibmPlexMono.variable} ${ibmPlexSans.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }
