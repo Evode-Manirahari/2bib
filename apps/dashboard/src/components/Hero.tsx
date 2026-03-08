@@ -25,7 +25,7 @@ export default function Hero() {
       {/* CTAs */}
       <div className="flex gap-3 items-center mb-18 animate-fade-up [animation-delay:300ms]">
         <Link
-          href="/dashboard"
+          href="/get-started"
           className="font-mono text-[13px] font-medium text-black bg-[#00d4ff] border-0 px-6 py-3 rounded no-underline uppercase tracking-wider hover:opacity-85 hover:-translate-y-px transition-all"
         >
           Get API Key — Free

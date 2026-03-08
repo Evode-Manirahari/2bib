@@ -115,7 +115,7 @@ export default function Pricing() {
               </ul>
 
               <a
-                href="/dashboard"
+                href="/get-started"
                 className={`font-mono text-[12px] font-medium uppercase tracking-wider py-2.5 px-5 rounded text-center no-underline transition-all block ${
                   plan.featured
                     ? 'bg-[#00d4ff] text-black hover:opacity-85'

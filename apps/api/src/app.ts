@@ -17,6 +17,7 @@ import { validateRouter } from './routes/validate';
 import { paRouter } from './routes/pa';
 import { workflowsRouter } from './routes/workflows';
 import { billingRouter } from './routes/billing';
+import { registerRouter } from './routes/register';
 
 const app: Application = express();
 
@@ -57,6 +58,9 @@ app.use('/metrics', metricsRouter);
 // Public billing routes (no auth required)
 app.get('/v1/billing/plans', (req, res, next) => billingRouter(req, res, next));
 app.post('/v1/billing/webhook', (req, res, next) => billingRouter(req, res, next));
+
+// Public registration — no auth required
+app.use('/v1/register', registerRouter);
 
 // ── Authenticated v1 router ───────────────────────────────────────────────────
 const v1: Router = express.Router();

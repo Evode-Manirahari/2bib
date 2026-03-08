@@ -1,22 +1,17 @@
-# Backend Services + Navigation Wiring
+# API Key Signup Flow
 
-## Backend fixes
-- [x] Fix @pe/pa-simulator src/app.ts:9 — Express type annotation → tsc OK
-- [x] Verified @pe/cli (package name: pe-cli) → tsc OK
+## API Gateway
+- [ ] Create apps/api/src/routes/register.ts
+- [ ] Mount /v1/register in apps/api/src/app.ts (public, before auth)
+- [ ] Fix apps/api/src/routes/me.ts — return full key data from DB
 
-## Frontend navigation
-- [x] Nav: Get API Key → /dashboard, Docs → /docs
-- [x] Hero: Get API Key → /dashboard
-- [x] Pricing: all 4 CTAs → /dashboard
-- [x] Footer: Docs → /docs, GitHub → github.com/Evode-Manirahari/2bib, Status → /status, Privacy → /privacy
-- [x] PAAgent: "Try it →" button → /dashboard/pa
-
-## New pages
-- [x] /status — all systems operational page
-- [x] /privacy — privacy policy page
+## Dashboard
+- [ ] Create apps/dashboard/src/app/api/register/route.ts
+- [ ] Create apps/dashboard/src/app/get-started/page.tsx
+- [ ] Update Nav.tsx — Get API Key → /get-started
+- [ ] Update Hero.tsx — Get API Key → /get-started
+- [ ] Update Pricing.tsx — all CTAs → /get-started
 
 ## Verification
-- [x] pa-simulator tsc --noEmit → 0 errors
-- [x] dashboard tsc --noEmit → 0 errors
-- [x] cli tsc --noEmit → 0 errors
-- [x] dashboard already running on :3000
+- [ ] pnpm --filter @pe/api exec tsc --noEmit → 0 errors
+- [ ] pnpm --filter @pe/dashboard exec tsc --noEmit → 0 errors

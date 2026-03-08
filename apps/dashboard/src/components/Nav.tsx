@@ -29,7 +29,7 @@ export default function Nav() {
         ))}
         <li>
           <Link
-            href="/dashboard"
+            href="/get-started"
             className="font-mono text-xs font-medium text-black bg-[#00d4ff] px-4 py-1.5 rounded uppercase tracking-widest no-underline hover:opacity-85 transition-opacity"
           >
             Get API Key
