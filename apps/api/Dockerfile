@@ -7,9 +7,10 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
 COPY packages/types/package.json         ./packages/types/
 COPY packages/db/package.json            ./packages/db/
+COPY packages/db/prisma/                 ./packages/db/prisma/
 COPY apps/api/package.json               ./apps/api/
 RUN pnpm install --frozen-lockfile --ignore-scripts
-# Generate Prisma client after install
+# Generate Prisma client after install (schema.prisma must be present)
 RUN pnpm --filter @pe/db db:generate
 
 # ── Build ─────────────────────────────────────────────────────────────────────

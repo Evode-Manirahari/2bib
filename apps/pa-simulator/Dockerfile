@@ -9,6 +9,7 @@ COPY packages/types/package.json          ./packages/types/
 COPY packages/fhir-utils/package.json     ./packages/fhir-utils/
 COPY packages/payer-profiles/package.json ./packages/payer-profiles/
 COPY packages/db/package.json             ./packages/db/
+COPY packages/db/prisma/                  ./packages/db/prisma/
 COPY apps/pa-simulator/package.json       ./apps/pa-simulator/
 RUN pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm --filter @pe/db db:generate
