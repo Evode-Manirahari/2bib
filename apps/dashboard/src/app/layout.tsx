@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { PostHogProvider } from '@/providers/posthog';
 import './globals.css';
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${ibmPlexMono.variable} ${ibmPlexSans.variable}`}>
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );

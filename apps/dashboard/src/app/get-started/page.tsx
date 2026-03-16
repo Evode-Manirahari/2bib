@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { setStoredApiKey } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
-type State = 'form' | 'loading' | 'success' | 'exists' | 'error';
+type State = 'form' | 'loading' | 'success' | 'exists' | 'rotating' | 'error';
 
 interface RegisterResponse {
   rawKey?: string;
@@ -63,6 +63,28 @@ export default function GetStartedPage() {
       await navigator.clipboard.writeText(result.rawKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  async function handleRotateLostKey() {
+    setState('rotating');
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), reset: true }),
+      });
+      const data = await res.json() as RegisterResponse & { reset?: boolean };
+      if (!res.ok) {
+        setErrorMsg(data.error ?? 'Something went wrong.');
+        setState('error');
+        return;
+      }
+      setResult(data);
+      setState('success');
+    } catch {
+      setErrorMsg('Could not connect to the server.');
+      setState('error');
     }
   }
 
@@ -185,7 +207,7 @@ export default function GetStartedPage() {
         )}
 
         {/* ── ALREADY EXISTS STATE ── */}
-        {state === 'exists' && result && (
+        {(state === 'exists' || state === 'rotating') && result && (
           <div className="bg-[#0a0c0f] border border-[#1a1f28] rounded-lg p-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="w-2 h-2 rounded-full bg-[#febc2e]" />
@@ -194,7 +216,7 @@ export default function GetStartedPage() {
             <h1 className="font-mono text-[24px] font-semibold tracking-[-1px] leading-[1.1] mb-2">
               You already have a key.
             </h1>
-            <p className="text-[14px] text-[#7a8699] leading-[1.7] mb-6">
+            <p className="text-[14px] text-[#7a8699] leading-[1.7] mb-4">
               {result.message}
             </p>
             <div className="bg-[#050608] border border-[#242b36] rounded-md px-4 py-3 mb-6">
@@ -202,10 +224,20 @@ export default function GetStartedPage() {
             </div>
             <a
               href="/dashboard"
-              className="font-mono text-[13px] font-medium text-black bg-[#00d4ff] px-6 py-3 rounded uppercase tracking-wider hover:opacity-85 transition-opacity block text-center no-underline"
+              className="font-mono text-[13px] font-medium text-black bg-[#00d4ff] px-6 py-3 rounded uppercase tracking-wider hover:opacity-85 transition-opacity block text-center no-underline mb-4"
             >
               Open Dashboard →
             </a>
+            <button
+              onClick={() => void handleRotateLostKey()}
+              disabled={state === 'rotating'}
+              className="font-mono text-[12px] text-[#7a8699] border border-[#242b36] px-6 py-3 rounded uppercase tracking-wider hover:border-[#ff5f57] hover:text-[#ff5f57] transition-all w-full disabled:opacity-50"
+            >
+              {state === 'rotating' ? 'Generating new key…' : 'I lost my key — issue a new one'}
+            </button>
+            <p className="font-mono text-[11px] text-[#4a5568] mt-2 text-center">
+              This will revoke your existing key immediately.
+            </p>
           </div>
         )}
 

@@ -5,7 +5,7 @@ import { fetchLogs, getStoredApiKey, type RequestLog } from '@/lib/api';
 import { formatDate, formatDuration } from '@/lib/utils';
 import { StatusBadge } from '@/components/badge';
 import { ApiKeyModal } from '@/components/api-key-input';
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -27,6 +27,21 @@ export default function LogsPage() {
   const [error, setError] = useState('');
   const [method, setMethod] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState(STATUS_FILTERS[0]!);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+
+  function copyCurl(log: RequestLog) {
+    const key = getStoredApiKey();
+    const url = `${API_BASE}${log.path}`;
+    const headers = `-H "Authorization: Bearer ${key}"`;
+    const payerHeader = log.payerTarget ? ` \\\n  -H "X-Pe-Payer-Target: ${log.payerTarget}"` : '';
+    const method = log.method !== 'GET' ? ` \\\n  -X ${log.method}` : '';
+    const curl = `curl ${headers}${payerHeader}${method} \\\n  "${url}"`;
+    void navigator.clipboard.writeText(curl);
+    setCopiedId(log.id);
+    setTimeout(() => setCopiedId(null), 1500);
+  }
 
   const load = useCallback(async () => {
     const key = getStoredApiKey();
@@ -126,24 +141,25 @@ export default function LogsPage() {
                   <th className="px-4 py-3 font-medium">Duration</th>
                   <th className="px-4 py-3 font-medium">Payer</th>
                   <th className="px-4 py-3 font-medium">Time</th>
+                  <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {loading && logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                       Loading…
                     </td>
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                       No logs found
                     </td>
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={log.id} className="hover:bg-muted/20 transition-colors group">
                       <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                         {log.method}
                       </td>
@@ -161,6 +177,16 @@ export default function LogsPage() {
                       </td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(log.createdAt)}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          onClick={() => copyCurl(log)}
+                          title="Copy as cURL"
+                          className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-all"
+                        >
+                          <Copy size={11} />
+                          {copiedId === log.id ? 'copied!' : 'curl'}
+                        </button>
                       </td>
                     </tr>
                   ))

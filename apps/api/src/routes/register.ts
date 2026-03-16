@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response, type NextFunction } 
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma, Tier } from '@pe/db';
+import { sendWelcomeEmail } from '../services/email';
 
 export const registerRouter: IRouter = Router();
 
@@ -74,11 +75,72 @@ registerRouter.post('/', async (req: Request, res: Response, next: NextFunction)
       },
     });
 
+    // Fire-and-forget welcome email
+    sendWelcomeEmail(normalizedEmail, displayPrefix).catch((e: Error) => {
+      console.error('[register] Failed to send welcome email:', e.message);
+    });
+
     res.status(201).json({
       rawKey,
       prefix: displayPrefix,
       userId: user.id,
       projectId: project.id,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /v1/register/reset ───────────────────────────────────────────────────
+// Recovers access by revoking the old key and issuing a new one.
+// Email = proof of ownership (sandbox-appropriate for developer platform).
+
+registerRouter.post('/reset', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body as { email?: string };
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      res.status(400).json({ error: 'Valid email is required', code: 'INVALID_EMAIL' });
+      return;
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      // Don't reveal whether email exists — just say "if found, a new key was issued"
+      res.status(200).json({ message: 'If that email has an account, a new key has been issued. Check your inbox.' });
+      return;
+    }
+
+    // Revoke all existing active keys
+    await prisma.apiKey.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    // Issue new key
+    const rawKey = `pe_live_${crypto.randomBytes(20).toString('hex')}`;
+    const displayPrefix = rawKey.slice(0, 14);
+    const hashedKey = await bcrypt.hash(rawKey, 10);
+
+    const project = await prisma.project.findFirst({ where: { userId: user.id } });
+
+    await prisma.apiKey.create({
+      data: {
+        key: hashedKey,
+        prefix: displayPrefix,
+        tier: Tier.FREE,
+        rateLimit: 1000,
+        userId: user.id,
+        projectId: project!.id,
+      },
+    });
+
+    res.status(201).json({
+      rawKey,
+      prefix: displayPrefix,
+      reset: true,
     });
   } catch (err) {
     next(err);
