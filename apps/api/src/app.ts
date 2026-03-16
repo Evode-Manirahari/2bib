@@ -18,6 +18,7 @@ import { paRouter } from './routes/pa';
 import { workflowsRouter } from './routes/workflows';
 import { billingRouter } from './routes/billing';
 import { registerRouter } from './routes/register';
+import { keysRouter } from './routes/keys';
 
 const app: Application = express();
 
@@ -75,6 +76,7 @@ v1.use('/validate', validateRouter);
 v1.use('/pa', paRouter);
 v1.use('/workflows', workflowsRouter);
 v1.use('/billing', billingRouter);
+v1.use('/keys', keysRouter);
 
 app.use('/v1', v1);
 

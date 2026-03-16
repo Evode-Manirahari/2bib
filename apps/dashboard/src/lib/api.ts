@@ -213,3 +213,16 @@ export function fetchWorkflowRuns(params: { page?: number; pageSize?: number } =
   if (params.pageSize) q.set('pageSize', String(params.pageSize));
   return apiFetch<{ data: WorkflowRun[]; total: number; page: number; pageSize: number; hasMore: boolean }>(`/workflows?${q}`);
 }
+
+// ── /keys ─────────────────────────────────────────────────────────────────────
+
+export interface RotateKeyResponse {
+  rawKey: string;
+  prefix: string;
+  id: string;
+  createdAt: string;
+}
+
+export function rotateApiKey() {
+  return apiFetch<RotateKeyResponse>('/keys/rotate', { method: 'POST' });
+}

@@ -10,6 +10,9 @@ import {
   Stethoscope,
   GitBranch,
   ExternalLink,
+  CreditCard,
+  KeyRound,
+  Settings,
 } from 'lucide-react';
 
 const NAV = [
@@ -18,6 +21,9 @@ const NAV = [
   { href: '/dashboard/validate', label: 'Validator', icon: ShieldCheck },
   { href: '/dashboard/pa', label: 'PA Simulator', icon: Stethoscope },
   { href: '/dashboard/workflows', label: 'Workflows', icon: GitBranch },
+  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/keys', label: 'API Keys', icon: KeyRound },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Sidebar() {
